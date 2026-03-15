@@ -1,0 +1,71 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: buildforge-backend
+    container_name: buildforge-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=buildforge_ai
+      - DB_USERNAME=root
+      - DB_PASSWORD=password
+      - REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - buildforge-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: buildforge-frontend
+    container_name: buildforge-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
+    depends_on:
+      - backend
+    networks:
+      - buildforge-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: buildforge-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=buildforge_ai
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/var/lib/mysql
+    networks:
+      - buildforge-network
+
+  redis:
+    image: redis:alpine
+    container_name: buildforge-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - buildforge-network
+
+networks:
+  buildforge-network:
+    driver: bridge
+
+volumes:
+  mysqldata:

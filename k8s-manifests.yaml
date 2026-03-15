@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildforge-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: buildforge-backend
+  template:
+    metadata:
+      labels:
+        app: buildforge-backend
+    spec:
+      containers:
+      - name: backend
+        image: buildforge-backend:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - configMapRef:
+            name: backend-config
+        - secretRef:
+            name: backend-secrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buildforge-backend
+spec:
+  selector:
+    app: buildforge-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: buildforge-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: buildforge-frontend
+  template:
+    metadata:
+      labels:
+        app: buildforge-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: buildforge-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://api.buildforge.ai"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: buildforge-frontend
+spec:
+  selector:
+    app: buildforge-frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
